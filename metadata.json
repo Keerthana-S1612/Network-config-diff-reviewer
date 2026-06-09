@@ -1,0 +1,6 @@
+{
+  "name": "AegisOps AI",
+  "description": "Enterprise AI Multi-Agent Orchestrator and Autonomous Operations Dashboard",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  # 1. Main Full-stack Operations Platform Application Node
+  aegisops-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: aegisops_app_service
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - DATABASE_URL=postgresql://root:dbpass123@postgres-db:5432/aegisops?sslmode=disable
+      - REDIS_URL=redis://:redispass123@redis-cache:6379/0
+    depends_on:
+      - postgres-db
+      - redis-cache
+    networks:
+      - aegis-backplane
+    restart: always
+
+  # 2. Normalized Relational SQL Storage Engine
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: aegisops_postgres_node
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=dbpass123
+      - POSTGRES_DB=aegisops
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    networks:
+      - aegis-backplane
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root -d aegisops"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+  # 3. High-Performance Redis RAM Node
+  redis-cache:
+    image: redis:7-alpine
+    container_name: aegisops_redis_node
+    command: redis-server --requirepass redispass123
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    networks:
+      - aegis-backplane
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redispass123", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+volumes:
+  pgdata:
+  redisdata:
+
+networks:
+  aegis-backplane:
+    driver: bridge
